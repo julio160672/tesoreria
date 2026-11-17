@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Control de pagos</title>
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#0e7a6b">
+<link rel="apple-touch-icon" href="icon-192.png">
+<style>
+:root{--bg:#eef3f0;--card:#fff;--ink:#12241f;--mute:#5d716a;--line:#d5e0db;--acc:#0e7a6b;--accink:#fff;--ok:#0e7a6b;--okbg:#d9f0ea;--bad:#b4381f;--badbg:#fbe3dc;color-scheme:light}
+@media (prefers-color-scheme:dark){:root{--bg:#0f1a17;--card:#182622;--ink:#e6f1ed;--mute:#93a9a1;--line:#2a3d37;--acc:#3fc2ac;--accink:#06201b;--ok:#5fd3bd;--okbg:#18403a;--bad:#ff9a82;--badbg:#44211a;color-scheme:dark}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.4 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;max-width:560px;margin-inline:auto;padding:calc(14px + env(safe-area-inset-top,0px)) 14px 100px}
+h1{font-size:22px;font-weight:800;margin:0 0 12px}
+h3{margin:18px 0 8px;font-size:17px}h3 small{color:var(--mute);font-weight:400}
+select,input{font:inherit;color:var(--ink);background:var(--card);border:1.5px solid var(--line);border-radius:10px;padding:10px 12px;width:100%}
+button{font:inherit;font-weight:600;border:0;border-radius:10px;padding:10px 14px;background:var(--acc);color:var(--accink);cursor:pointer}
+button.g{background:transparent;color:var(--acc);border:1.5px solid var(--line)}
+button.d{background:transparent;color:var(--bad);padding:6px 8px}
+button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid var(--acc);outline-offset:2px}
+label{display:block;font-size:14px;color:var(--mute);margin:12px 0 4px}
+.top{display:flex;gap:8px}
+.sum{display:grid;grid-template-columns:repeat(3,1fr);margin:14px 0;background:var(--card);border:1.5px solid var(--line);border-radius:14px}
+.sum div{padding:12px 6px;text-align:center}.sum div+div{border-left:1.5px solid var(--line)}
+.sum b{display:block;font-size:18px;font-weight:800}.sum small{color:var(--mute)}
+.bad{color:var(--bad)}.okc{color:var(--ok)}
+.chips{display:flex;gap:6px;margin-bottom:10px}
+.chips button{flex:1;background:transparent;color:var(--mute);border:1.5px solid var(--line);padding:8px 4px}
+.chips button.on{background:var(--acc);color:var(--accink);border-color:var(--acc)}
+.m{background:var(--card);border:1.5px solid var(--line);border-radius:14px;padding:12px 14px;margin-bottom:10px}
+.m header{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
+.m h2{font-size:18px;margin:0;font-weight:800}
+.tag{font-size:13px;font-weight:600;padding:2px 10px;border-radius:99px;white-space:nowrap}
+.tag.z{background:var(--line);color:var(--mute)}.tag.p{background:var(--okbg);color:var(--ok)}.tag.f{background:var(--badbg);color:var(--bad)}
+.m p{margin:4px 0 8px;color:var(--mute);font-size:14px}
+.bar{height:8px;background:var(--line);border-radius:9px;overflow:hidden}.bar i{display:block;height:100%;background:var(--acc)}
+.row{display:flex;gap:8px;align-items:center;margin-top:10px}.row .f{flex:1}
+.empty{text-align:center;color:var(--mute);padding:34px 10px}
+.big{background:var(--badbg);color:var(--bad);border-radius:14px;padding:12px 14px;margin:14px 0 10px;font-weight:600}
+.big b{font-size:22px;margin-left:6px}
+.full{width:100%;margin-top:12px}
+.acts{display:flex;gap:8px;margin-top:14px}.acts button{flex:1}
+details{margin-top:14px;background:var(--card);border:1.5px solid var(--line);border-radius:14px;padding:10px 14px}
+summary{font-weight:600;cursor:pointer}
+.h{display:flex;justify-content:space-between;align-items:center;border-top:1px solid var(--line);padding:4px 0;font-size:14px;margin-top:6px}
+.tw{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:14px;background:var(--card)}
+th,td{padding:7px 6px;text-align:right;border-bottom:1px solid var(--line)}
+th:first-child,td:first-child{text-align:left}
+.tot td{font-weight:800;border-top:2px solid var(--ink)}
+.nav{position:fixed;left:0;right:0;bottom:0;display:flex;background:var(--card);border-top:1.5px solid var(--line);padding-bottom:env(safe-area-inset-bottom,0px)}
+.nav button{flex:1;background:transparent;color:var(--mute);border-radius:0;padding:14px 4px}
+.nav button.on{color:var(--acc);box-shadow:inset 0 3px 0 var(--acc)}
+dialog{border:0;border-radius:16px;padding:18px;width:min(92vw,420px);background:var(--card);color:var(--ink)}
+dialog::backdrop{background:#0008}dialog h3{margin:0 0 6px}
+#toast{position:fixed;left:50%;bottom:84px;transform:translateX(-50%);background:var(--ink);color:var(--bg);padding:10px 16px;border-radius:10px;font-weight:600}
+.pr{display:none}
+@media print{
+body{background:#fff;color:#000;max-width:none;padding:0}
+.nav,.noprint,#toast{display:none!important}.pr{display:block}
+table,th,td{background:#fff!important;color:#000!important;border-color:#999!important}
+.bad,.okc{color:#000!important}
+}
+</style>
+</head>
+<body>
+<h1 class="noprint">Control de pagos</h1>
+<div id="main"></div>
+<nav class="nav"><button data-t="pagos" onclick="go('pagos')">Pagos</button><button data-t="acts" onclick="go('acts')">Actividades</button><button data-t="rep" onclick="go('rep')">Reporte</button></nav>
+<dialog id="dlg"></dialog>
+<div id="toast" hidden></div>
+<input type="file" id="imp" accept=".json,application/json" hidden>
+
+<script>
+const $=s=>document.querySelector(s),K='tesoreria-v1';
+let S=null;try{S=JSON.parse(localStorage.getItem(K))}catch(e){}
+S=S||{acts:[],cur:null};
+let tab='pagos',filter='all',mem='',repSel='all';
+const save=()=>{try{localStorage.setItem(K,JSON.stringify(S))}catch(e){}};
+const uid=()=>Math.random().toString(36).slice(2,9);
+const r2=n=>Math.round(n*100)/100;
+const money=n=>'S/ '+r2(n).toFixed(2).replace(/\.00$/,'');
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const act=()=>S.acts.find(a=>a.id===S.cur);
+const paid=r=>r.pays.reduce((s,p)=>s+p.a,0);
+const owe=(a,r)=>r2(r.n*a.price-paid(r));
+const today=()=>new Date().toISOString().slice(0,10);
+const members=()=>[...new Set(S.acts.flatMap(a=>a.rows.map(r=>r.name)))].sort((x,y)=>x.localeCompare(y,'es'));
+const debts=n=>S.acts.map(a=>({a,r:a.rows.find(r=>r.name===n)})).filter(x=>x.r&&owe(x.a,x.r)>0);
+const show=h=>{$('#dlg').innerHTML=h;$('#dlg').showModal()};
+const close=()=>$('#dlg').close();
+const toast=t=>{const e=$('#toast');e.textContent=t;e.hidden=false;setTimeout(()=>e.hidden=true,1800)};
+const go=t=>{tab=t;render();scrollTo(0,0)};
+
+function render(){
+  document.querySelectorAll('.nav button').forEach(b=>b.classList.toggle('on',b.dataset.t===tab));
+  $('#main').innerHTML={pagos:vPagos,acts:vActs,rep:vRep}[tab]();
+}
+
+/* ---------- PAGOS: por miembro ---------- */
+function vPagos(){
+  const ms=members();
+  if(!ms.length)return '<div class="empty">Primero crea una actividad y agrega miembros en la pestaña “Actividades”.</div>';
+  if(!ms.includes(mem))mem='';
+  let h=`<label>Miembro</label><select onchange="mem=this.value;render()"><option value="">Elegir miembro</option>${ms.map(n=>`<option ${n===mem?'selected':''}>${esc(n)}</option>`).join('')}</select>`;
+  if(!mem)return h+'<div class="empty">Elige un miembro y verás solo las actividades donde debe un saldo.</div>';
+  const ds=debts(mem),tot=ds.reduce((s,x)=>s+owe(x.a,x.r),0);
+  if(!ds.length)h+='<div class="empty okc"><b>Este miembro no debe nada.</b></div>';
+  else{
+    h+=`<div class="big">Debe en total<b>${money(tot)}</b></div>`+ds.map(({a,r})=>{const d=owe(a,r);
+      return `<div class="m"><header><h2>${esc(a.name)}</h2><span class="tag f">Falta ${money(d)}</span></header>
+      <p>${r.n} unidades × ${money(a.price)} · pagó ${money(paid(r))}</p>
+      <div class="row"><input class="pi" data-a="${a.id}" type="number" min="0" max="${d}" step="0.1" placeholder="Monto (S/)" inputmode="decimal"><button class="g" onclick="this.previousElementSibling.value=${d}">Saldar todo</button></div></div>`}).join('')+
+    `<label>Fecha del pago</label><input id="pd" type="date" value="${today()}"><button class="full" onclick="savePays()">Guardar pagos</button>`;
+  }
+  const hist=S.acts.flatMap(a=>{const r=a.rows.find(x=>x.name===mem);return r?r.pays.map((p,i)=>({a,p,i})):[]});
+  if(hist.length)h+=`<details><summary>Pagos registrados (${hist.length})</summary>${hist.map(({a,p,i})=>`<div class="h"><span>${p.d} · ${esc(a.name)} · ${money(p.a)}</span><button class="d" onclick="unpay('${a.id}',${i})">Borrar</button></div>`).join('')}</details>`;
+  return h;
+}
+function savePays(){
+  const d=$('#pd').value||today();let n=0,bad=false;const todo=[];
+  document.querySelectorAll('.pi').forEach(i=>{const v=r2(+i.value);if(!(v>0))return;
+    const a=S.acts.find(x=>x.id===i.dataset.a),r=a.rows.find(x=>x.name===mem);
+    if(v>owe(a,r))bad=true;else todo.push([r,v])});
+  if(bad)return alert('Un monto es mayor que el saldo de esa actividad. Revísalo.');
+  if(!todo.length)return alert('Escribe el monto de al menos una actividad.');
+  todo.forEach(([r,v])=>r.pays.push({a:v,d}));save();toast('Pagos guardados');render();
+}
+function unpay(aid,i){if(!confirm('¿Borrar este pago?'))return;
+  S.acts.find(a=>a.id===aid).rows.find(r=>r.name===mem).pays.splice(i,1);save();render()}
+
+/* ---------- ACTIVIDADES ---------- */
+function vActs(){
+  const a=act();
+  let h=`<div class="top"><select onchange="S.cur=this.value;save();render()" aria-label="Actividad">${S.acts.map(x=>`<option value="${x.id}" ${x.id===S.cur?'selected':''}>${esc(x.name)}</option>`).join('')||'<option>Sin actividades</option>'}</select><button onclick="newAct()">Nueva</button></div>`;
+  if(!a)return h+'<div class="empty">Aún no hay actividades.<br>Toca “Nueva” para crear la primera (pollada, parrillada, mazamorra...).</div>';
+  const e=a.rows.reduce((s,r)=>s+r.n*a.price,0),g=a.rows.reduce((s,r)=>s+paid(r),0);
+  const list=a.rows.filter(r=>filter==='all'||(filter==='debe'?owe(a,r)>0:owe(a,r)<=0&&r.n>0));
+  h+=`<div class="sum"><div><b>${money(e)}</b><small>Esperado</small></div><div><b class="okc">${money(g)}</b><small>Cobrado</small></div><div><b class="bad">${money(e-g)}</b><small>Falta</small></div></div>
+  <div class="chips">${[['all','Todos'],['debe','Deben'],['pago','Pagados']].map(([k,t])=>`<button class="${filter===k?'on':''}" onclick="filter='${k}';render()">${t}</button>`).join('')}</div>`+
+  (list.map(r=>{const d=owe(a,r),pc=r.n?Math.min(100,paid(r)/(r.n*a.price)*100):0;
+    return `<div class="m"><header><h2>${esc(r.name)}</h2><span class="tag ${!r.n?'z':d>0?'f':'p'}">${!r.n?'Sin unidades':d>0?'Falta '+money(d):'Pagado'}</span></header>
+    <p>${r.n} unidades × ${money(a.price)} = ${money(r.n*a.price)} · pagó ${money(paid(r))}</p><div class="bar"><i style="width:${pc}%"></i></div>
+    <div class="row"><button class="f g" onclick="mem='${esc(r.name).replace(/'/g,"\\'")}';go('pagos')">Registrar pago</button><button class="${r.n?'g':''}" onclick="cards('${r.id}')">${r.n?'unidades':'Asignar unidades'}</button></div></div>`}).join('')||'<div class="empty">No hay miembros en esta vista.</div>')+
+  `<div class="acts"><button onclick="addM()">Agregar miembro</button><button class="g" onclick="delAct()">Eliminar actividad</button></div>`;
+  return h;
+}
+function newAct(){show(`<h3>Nueva actividad</h3><form onsubmit="event.preventDefault();mkAct(this)">
+<label>Nombre</label><input name="n" required placeholder="Pollada pro fondos">
+<label>Precio de cada unidad (S/)</label><input name="p" type="number" min="0" step="0.5" required inputmode="decimal">
+<label><input type="checkbox" name="cp" checked style="width:auto"> Copiar los miembros de la actividad actual (con 0 unidades, las asignas después)</label>
+<div class="acts"><button type="button" class="g" onclick="close()">Cancelar</button><button>Crear</button></div></form>`)}
+function mkAct(f){const a={id:uid(),name:f.n.value.trim(),price:+f.p.value,rows:[]},p=act();
+  if(p&&f.cp.checked)a.rows=p.rows.map(r=>({id:uid(),name:r.name,n:0,pays:[]}));
+  S.acts.unshift(a);S.cur=a.id;save();close();render()}
+function delAct(){if(confirm('¿Eliminar esta actividad y todos sus pagos?')){S.acts=S.acts.filter(a=>a.id!==S.cur);S.cur=S.acts[0]?.id||null;save();render()}}
+function addM(){const nm=members();
+  show(`<h3>Agregar miembro</h3><form onsubmit="event.preventDefault();mkM(this)">
+<label>Nombre</label><input name="n" required list="nl" autocomplete="off"><datalist id="nl">${nm.map(n=>`<option value="${esc(n)}">`).join('')}</datalist>
+<label>unidades entregadas</label><input name="c" type="number" min="1" value="5" required inputmode="numeric">
+<div class="acts"><button type="button" class="g" onclick="close()">Cancelar</button><button>Agregar</button></div></form>`)}
+function mkM(f){const a=act(),n=f.n.value.trim();
+  if(a.rows.some(r=>r.name===n)){alert('Ese miembro ya está en esta actividad.');return}
+  a.rows.push({id:uid(),name:n,n:+f.c.value,pays:[]});save();close();render()}
+function cards(id){const r=act().rows.find(x=>x.id===id);
+  show(`<h3>${esc(r.name)}</h3><form onsubmit="event.preventDefault();setN('${id}',this)"><label>unidadess entregadas</label><input name="c" type="number" min="0" value="${r.n}" inputmode="numeric">
+<div class="acts"><button type="button" class="d" onclick="delM('${id}')">Quitar miembro</button><button>Guardar</button></div></form>`)}
+function setN(id,f){act().rows.find(x=>x.id===id).n=+f.c.value;save();close();render()}
+function delM(id){if(confirm('¿Quitar a este miembro de la actividad?')){const a=act();a.rows=a.rows.filter(r=>r.id!==id);save();close();render()}}
+
+/* ---------- REPORTE ---------- */
+const scope=()=>repSel==='all'?S.acts:S.acts.filter(a=>a.id===repSel);
+function vRep(){
+  if(!S.acts.length)return '<div class="empty">Aún no hay datos para el reporte.</div>';
+  if(repSel!=='all'&&!S.acts.some(a=>a.id===repSel))repSel='all';
+  const L=scope();let ge=0,gg=0;
+  const body=L.map(a=>{const e=a.rows.reduce((s,r)=>s+r.n*a.price,0),g=a.rows.reduce((s,r)=>s+paid(r),0);ge+=e;gg+=g;
+    return `<h3>${esc(a.name)} <small>(unidad ${money(a.price)})</small></h3><div class="tw"><table><tr><th>Miembro</th><th>Unid.</th><th>Total</th><th>Pagó</th><th>Saldo</th></tr>`+
+    a.rows.map(r=>`<tr><td>${esc(r.name)}</td><td>${r.n}</td><td>${money(r.n*a.price)}</td><td>${money(paid(r))}</td><td class="${owe(a,r)>0?'bad':'okc'}">${money(owe(a,r))}</td></tr>`).join('')+
+    `<tr class="tot"><td>Total</td><td>${a.rows.reduce((s,r)=>s+r.n,0)}</td><td>${money(e)}</td><td>${money(g)}</td><td>${money(e-g)}</td></tr></table></div>`}).join('');
+  return `<div class="noprint"><label>Reporte de</label><select onchange="repSel=this.value;render()"><option value="all">Todas las actividades</option>${S.acts.map(a=>`<option value="${a.id}" ${a.id===repSel?'selected':''}>${esc(a.name)}</option>`).join('')}</select></div>
+  <div id="rep"><h1 class="pr">Reporte de tesorería</h1><p style="color:var(--mute);margin:8px 0 0">Fecha: ${today()} · Cobrado ${money(gg)} de ${money(ge)} · Falta ${money(ge-gg)}</p>${body}</div>
+  <div class="acts noprint"><button onclick="print()">Guardar como PDF</button><button class="g" onclick="share()">Enviar deudas</button></div>
+  <details class="noprint"><summary>Copia de seguridad</summary><p style="color:var(--mute);font-size:14px">Guarda un archivo con todos tus datos. Úsalo para no perderlos o para pasarlos a otro celular.</p>
+  <div class="acts"><button class="g" onclick="exportB()">Exportar</button><button class="g" onclick="$('#imp').click()">Importar</button></div></details>`;
+}
+function share(){
+  const t=scope().map(a=>{const d=a.rows.filter(r=>owe(a,r)>0);
+    return `*${a.name}* (unidad ${money(a.price)})\n`+(d.map(r=>`- ${r.name}: ${money(owe(a,r))}`).join('\n')||'Todos pagaron. ¡Gracias!')}).join('\n\n');
+  window.open('https://wa.me/?text='+encodeURIComponent('Faltan cancelar:\n\n'+t),'_blank')}
+function exportB(){const u=URL.createObjectURL(new Blob([JSON.stringify(S)],{type:'application/json'})),a=document.createElement('a');
+  a.href=u;a.download='respaldo-tesoreria-'+today()+'.json';a.click();setTimeout(()=>URL.revokeObjectURL(u),2000)}
+$('#imp').onchange=e=>{const f=e.target.files[0];if(!f)return;const fr=new FileReader();
+  fr.onload=()=>{try{const d=JSON.parse(fr.result);if(!Array.isArray(d.acts))throw 0;
+    if(confirm('Se reemplazarán los datos actuales por los del respaldo. ¿Continuar?')){S=d;if(!S.cur&&S.acts[0])S.cur=S.acts[0].id;save();render();toast('Respaldo importado')}}
+    catch(x){alert('El archivo no es un respaldo válido.')}e.target.value=''};fr.readAsText(f)};
+
+if(!S.cur&&S.acts[0])S.cur=S.acts[0].id;
+render();
+if('serviceWorker' in navigator)addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}));
+</script>
+</body>
+</html>
